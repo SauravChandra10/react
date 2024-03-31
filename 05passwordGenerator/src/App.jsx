@@ -1,11 +1,16 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 function App() {
+  const [buttonText, setButtonText] = useState("Copy");
   const [length, setLength] = useState(8);
   const [numberAllowed, setNumberAllowed] = useState(false);
   const [charAllowed, setCharAllowed] = useState(false);
   const [password, setPassword] = useState("");
 
+  // useRef hook:
+  const passwordRef = useRef(null);
+
+  // useCallback dependencies are those which are related to optimisation
   const passwordGenerator = useCallback(() => {
     let pass = "";
     let str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -15,11 +20,24 @@ function App() {
 
     for (let i = 0; i < length; i++) {
       let char = Math.floor(Math.random() * str.length + 1);
-      pass = str.charAt(char);
+      pass += str.charAt(char);
     }
 
     setPassword(pass);
   }, [length, numberAllowed, charAllowed, setPassword]);
+
+  const copyPasswordToClip = useCallback(() => {
+    passwordRef.current?.select();
+    passwordRef.current?.setSelectionRange(0, 100);
+    window.navigator.clipboard.writeText(password);
+    setButtonText("Copied!");
+    setTimeout(() => setButtonText("Copy"), 2000);
+  }, [password]);
+
+  // useEffect dependencies are those which when changed fire the callback again
+  useEffect(() => {
+    passwordGenerator();
+  }, [length, numberAllowed, charAllowed, passwordGenerator]);
 
   return (
     <>
@@ -34,9 +52,13 @@ function App() {
             className="outline-none w-full py-1 px-3"
             placeholder="Password"
             readOnly
+            ref={passwordRef}
           />
-          <button className="outline-none bg-blue-700 text-white px-3 py-0.5 shrink-0">
-            Copy
+          <button
+            onClick={copyPasswordToClip}
+            className="outline-none bg-blue-700 text-white px-3 py-0.5 shrink-0 hover:bg-orange-500 hover:text-black w-20"
+          >
+            {buttonText}
           </button>
         </div>
         <div className="flex text-sm gap-x-2">
